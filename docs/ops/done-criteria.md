@@ -1,4 +1,4 @@
-# CCM Donation Management — Done Criteria Checklist
+# Pinnacle Donations — Done Criteria Checklist
 
 Manual verification against the 12 spec criteria from the implementation plan
 (`docs/superpowers/plans/2026-04-16-donation-mgmt.md`, Task 5.3).

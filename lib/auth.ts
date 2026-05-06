@@ -5,6 +5,7 @@ export type AppUser = {
   auth_user_id: string | null;
   email: string;
   role: "admin" | "user";
+  organization_id: string;
   invited_at: string;
   invited_by: string | null;
   first_login_at: string | null;

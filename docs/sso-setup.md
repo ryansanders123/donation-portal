@@ -1,4 +1,4 @@
-# SSO Setup — CCM Donation Portal
+# SSO Setup — Pinnacle Donations
 
 The login page supports three sign-in methods. Code-side they're already wired —
 this doc covers the **external configuration** required to turn each one on.
@@ -32,7 +32,7 @@ own the client secret rotation in 24 months.
 1. Sign in to https://portal.azure.com with your personal Microsoft account.
 2. Search **Microsoft Entra ID** → open it.
 3. Left nav → **App registrations** → **+ New registration**.
-4. Name: `CCM Donation Portal`.
+4. Name: `Pinnacle Donations`.
 5. Supported account types: **Accounts in any organizational directory and
    personal Microsoft accounts (any Azure AD directory - multitenant +
    personal Microsoft accounts e.g. Skype, Xbox)**.

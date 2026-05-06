@@ -1,6 +1,6 @@
 # Build Status
 
-Last updated: 2026-04-17
+Last updated: 2026-05-05 (post demo→prod cutover + multi-tenant foundation)
 
 Plan: [`docs/superpowers/plans/2026-04-16-donation-mgmt.md`](superpowers/plans/2026-04-16-donation-mgmt.md)
 Spec: [`docs/superpowers/specs/2026-04-16-donation-mgmt-design.md`](superpowers/specs/2026-04-16-donation-mgmt-design.md)
@@ -74,13 +74,18 @@ Spec: [`docs/superpowers/specs/2026-04-16-donation-mgmt-design.md`](superpowers/
 - `components/TaxDoneePicker.tsx` — small client wrapper that persists the
   selected donee to a hidden form field
 
+## Cutover (2026-05-05)
+
+Project renamed from `ccm-demo` to `donation-portal` (display name "Pinnacle Donations"). Multi-tenant foundation landed — `organizations` table with CCMC as first row; every domain table now has `organization_id` with RLS scoping. Per-org branding, feature flags, and onboarding flow remain deferred.
+
 ## Open / next actions
 
-- **Supabase Auth URL Configuration** (user action): Site URL =
+- **Supabase Auth URL Configuration**: Site URL =
   `https://ccm.pinnacledatascience.com`, Redirect allow-list includes
   `https://ccm.pinnacledatascience.com/**`.
-- **Phase 5.4 steps 4–5**: first sign-in smoke test in production and
-  user-notification handoff.
+- Apply migration 0011 to the hosted pooler.
+- Rename GitHub repo + Vercel project + Supabase project to match new identifiers.
+- Enable GitHub branch protection on `main`.
 
 ## Architectural notes worth remembering
 

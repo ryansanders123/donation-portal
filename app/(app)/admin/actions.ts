@@ -12,6 +12,7 @@ export async function inviteUser(input: unknown) {
     email: email.toLowerCase(),
     role: "user",
     invited_by: admin.id,
+    organization_id: admin.organization_id,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/users");

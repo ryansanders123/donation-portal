@@ -1,8 +1,11 @@
-# Catholic Campus Ministry — Donation Portal
+# Pinnacle Donations
 
-Invite-only donation management app for a small parish-style donor base.
-Record cash / check / online gifts, see monthly and annual totals, and
-generate donor tax statements.
+A multi-tenant donation management portal. Each organization sees its own
+donors, donations, funds, campaigns, and reports — fully isolated by RLS at
+the database level. Users record cash / check / online gifts, see monthly
+and annual totals, and generate donor tax statements.
+
+The first organization on the platform is **Catholic Campus Ministry (CCMC)**.
 
 **Live:** https://ccm.pinnacledatascience.com
 **Hosting:** Vercel (auto-deploys on push to `main`)
@@ -12,7 +15,7 @@ generate donor tax statements.
 
 - **Next.js 14** App Router (TypeScript, Server Actions, Route Handlers)
 - **Supabase** — Postgres + Auth (`@supabase/ssr`)
-- **Tailwind** with a custom brand palette (burgundy `#751411`)
+- **Tailwind** with a custom brand palette
 - **Recharts** for the home dashboard chart
 - **Vitest** for unit tests, **Playwright** for smoke e2e
 - **Zod** for input validation
@@ -29,9 +32,22 @@ rejected.
 See [`docs/sso-setup.md`](docs/sso-setup.md) for the one-time external setup
 required to enable Microsoft sign-in.
 
-RLS is enforced on every table. All policies check `public.is_app_user()`
-(see the composite-NULL gotcha in **Known Issues** below). Admin-only
-mutations use `public.is_admin()`.
+RLS is enforced on every table. Policies use `public.is_app_user()` and
+`public.is_admin()` for role gating, plus `organization_id = public.current_org_id()`
+for tenant isolation. Admin-only mutations additionally require `is_admin()`.
+
+## Multi-tenant model
+
+| Table | Org-scoped? | Notes |
+|---|---|---|
+| `organizations` | n/a | The tenant table itself. |
+| `users` | yes | A user belongs to exactly one organization. |
+| `donees`, `funds`, `donations`, `campaigns`, `appeals` | yes | All have `organization_id` FK with `current_org_id()` default. |
+
+`current_org_id()` resolves the calling user's `organization_id` from
+`public.users`. Column defaults auto-populate `organization_id` on inserts,
+so application code doesn't need to set it explicitly (the admin invite
+path is the one exception — it sets it explicitly for clarity).
 
 ## Project layout
 
@@ -47,6 +63,8 @@ app/
     admin/
       funds/              # manage funds (admin)
       users/              # invite + manage users (admin)
+      campaigns/          # manage campaigns (admin)
+      appeals/            # manage appeals (admin)
   (public)/               # login + errors
   auth/callback/          # OAuth code exchange + gate
   auth/signout/
@@ -62,20 +80,23 @@ lib/
   validators.ts           # Zod schemas (donation, donee, void, invite, fund)
   supabase/server.ts      # request-scoped server client
   supabase/service.ts     # service-role client (server-only)
-supabase/migrations/      # 0001..0006 (see below)
+supabase/migrations/      # 0001..0011 — see below
 scripts/
   apply-migrations.mjs    # runs all migrations against pooler
   import-transactions.mjs # bulk-import CSV donations
   seed-donees.mjs         # perf-test donees (+ --cleanup)
   verify-migrations.mjs
 tests/
-  lib/                    # vitest unit tests (reports, validators)
+  lib/                    # vitest unit tests (auth, csv, reports, validators)
   e2e/                    # playwright smoke
+  perf/                   # autocomplete p95 benchmark
 docs/
   superpowers/
-    specs/2026-04-16-donation-mgmt-design.md
-    plans/2026-04-16-donation-mgmt.md
+    specs/                # design specs by date
+    plans/                # implementation plans by date
   STATUS.md               # what's built vs. plan
+  sso-setup.md            # external auth provider setup
+  ops/done-criteria.md    # acceptance checklist
 ```
 
 ## Migrations
@@ -87,7 +108,13 @@ docs/
 | 0003 | `indexes.sql` | Query + search indexes |
 | 0004 | `functions.sql` | `current_app_user()`, `is_admin()`, `users_with_providers` view |
 | 0005 | `rls.sql` | Row-level security policies |
-| 0006 | `fix_rls_composite_null.sql` | **Bugfix** — replaces broken `current_app_user() IS NOT NULL` composite checks with `is_app_user()` boolean helper |
+| 0006 | `fix_rls_composite_null.sql` | Bugfix — replaces broken composite checks with `is_app_user()` |
+| 0006 | `triggers.sql` | Donation immutable fields + last-admin guard |
+| 0007 | `seed.sql` | Default `Anon` donee + `General` fund |
+| 0008 | `campaigns_appeals.sql` | `campaigns`, `appeals` tables + RLS |
+| 0009 | `donee_address_split.sql` | Structured address columns on donees |
+| 0010 | `donor_list_view.sql` | `donor_list_v` aggregating lifetime + last-gift |
+| 0011 | `multi_tenant_foundation.sql` | `organizations` + `organization_id` FK + per-org RLS |
 
 ## Running locally
 
@@ -110,24 +137,22 @@ node scripts/apply-migrations.mjs
 
 - **Composite-NULL RLS.** Postgres defines `composite IS NOT NULL` as TRUE
   only when *every* field is non-null. `current_app_user()` returns a
-  `public.users` row, and most rows have NULL fields (`first_login_at`,
-  `invited_by`, `removed_at`), so the original policies silently filtered
-  every SELECT. Migration 0006 introduces `is_app_user()` which uses
-  `EXISTS` instead — use this helper in any future policies.
+  `public.users` row, and most rows have NULL fields, so the original
+  policies silently filtered every SELECT. Migration 0006 introduces
+  `is_app_user()` which uses `EXISTS` instead — use this helper in any
+  future policies.
 - **Pooler vs direct host.** The direct Postgres host
   (`db.<ref>.supabase.co`) has no IPv4 record. Use the session-mode pooler
   at `aws-1-us-east-2.pooler.supabase.com:5432`.
-- **OAuth + Supabase Site URL.** If Google redirects to `localhost:3000`
-  after sign-in, the Supabase dashboard's Site URL / Redirect URL allow-list
-  hasn't been updated for production. Set Site URL to
-  `https://ccm.pinnacledatascience.com` and add
-  `https://ccm.pinnacledatascience.com/**` to the allow-list.
+- **OAuth + Supabase Site URL.** Site URL must be
+  `https://ccm.pinnacledatascience.com` and redirect allow-list must
+  include `https://ccm.pinnacledatascience.com/**`. Otherwise sign-in
+  redirects bounce to `localhost:3000`.
 
 ## Seeded admin
 
-- `rpsanders01@gmail.com` — role `admin`
+- `rpsanders01@gmail.com` — role `admin`, organization CCMC
 
 ## Imported data
 
-12,023 historical transactions (2001–2026), 1,756 donees, 7 funds imported
-via `scripts/import-transactions.mjs`.
+12,023 historical CCMC transactions (2001–2026), 1,756 donees, 7 funds.

@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 /**
- * Playwright E2E config for CCM.
+ * Playwright E2E config for Pinnacle Donations.
  *
  * Notes:
  * - We only test chromium to keep CI fast (and local installs small).

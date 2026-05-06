@@ -17,13 +17,22 @@ export async function GET() {
     "current_app_user",
   );
 
+  const { data: orgIdRpc, error: orgRpcErr } = await supabase.rpc(
+    "current_org_id",
+  );
+
+  const { data: org, error: orgErr } = await supabase
+    .from("organizations")
+    .select("id,slug,name")
+    .maybeSingle();
+
   const { count: donationCount, error: donErr } = await supabase
     .from("donations")
     .select("*", { count: "exact", head: true });
 
   const { data: sampleDonations, error: sampleErr } = await supabase
     .from("donations")
-    .select("id,amount,date_received")
+    .select("id,amount,date_received,organization_id")
     .order("date_received", { ascending: false })
     .limit(3);
 
@@ -36,6 +45,10 @@ export async function GET() {
     authError: authErr?.message ?? null,
     appUserRpc,
     rpcError: rpcErr?.message ?? null,
+    currentOrgId: orgIdRpc ?? null,
+    currentOrgIdError: orgRpcErr?.message ?? null,
+    organization: org ?? null,
+    organizationError: orgErr?.message ?? null,
     donationCount: donationCount ?? null,
     donationCountError: donErr?.message ?? null,
     sampleDonations: sampleDonations ?? null,
