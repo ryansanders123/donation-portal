@@ -23,7 +23,18 @@ CREATE TABLE public.organizations (
 INSERT INTO public.organizations (slug, name)
 VALUES ('ccmc', 'Catholic Campus Ministry');
 
--- 2) Resolver: which org is the current request acting on behalf of?
+-- 2) Add organization_id (nullable initially) to every domain table.
+--    Done BEFORE creating current_org_id() so the function body can reference
+--    public.users.organization_id at create time (sql functions validate
+--    their body when they're created).
+ALTER TABLE public.users      ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+ALTER TABLE public.donees     ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+ALTER TABLE public.funds      ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+ALTER TABLE public.donations  ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+ALTER TABLE public.campaigns  ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+ALTER TABLE public.appeals    ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
+
+-- 3) Resolver: which org is the current request acting on behalf of?
 CREATE OR REPLACE FUNCTION public.current_org_id()
 RETURNS uuid
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, auth
@@ -36,14 +47,6 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.current_org_id() TO authenticated;
-
--- 3) Add organization_id (nullable initially) to every domain table
-ALTER TABLE public.users      ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
-ALTER TABLE public.donees     ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
-ALTER TABLE public.funds      ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
-ALTER TABLE public.donations  ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
-ALTER TABLE public.campaigns  ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
-ALTER TABLE public.appeals    ADD COLUMN organization_id uuid REFERENCES public.organizations(id) ON DELETE RESTRICT;
 
 -- 4) Backfill — only CCMC exists, so every row gets CCMC's id
 WITH ccmc AS (SELECT id FROM public.organizations WHERE slug = 'ccmc')
