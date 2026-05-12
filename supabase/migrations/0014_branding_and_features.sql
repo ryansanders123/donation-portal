@@ -186,6 +186,7 @@ SET logo_url       = COALESCE(logo_url, '/logo.png'),
                           'donations',   true,
                           'donors',      true,
                           'reports',     true,
+                          'analysis',    true,
                           'funds',       true
                         )
 WHERE slug = 'ccmc';
@@ -203,6 +204,7 @@ SET features = features
                     'donations',   false,
                     'donors',      false,
                     'reports',     true,
+                    'analysis',    true,
                     'funds',       false
                   )
 WHERE slug = 'wrh';

@@ -148,4 +148,63 @@ body {
   .page-subtitle {
     @apply mt-2 text-stone-600 text-pretty;
   }
+
+  /* ───────────────── Reports — data tables + bar-cell + chips ───────────────── */
+  .tbl {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .tbl thead th {
+    @apply sticky top-0 z-[1] bg-stone-50/95 text-stone-500
+           text-[10.5px] font-semibold uppercase tracking-[0.05em]
+           border-b border-stone-200 px-3 py-2 text-right whitespace-nowrap;
+  }
+  .tbl thead th.row-h { @apply text-left; }
+  .tbl tbody td {
+    @apply px-3 py-2 border-b border-stone-100 text-right align-middle whitespace-nowrap text-stone-800;
+  }
+  .tbl tbody td.row-h {
+    @apply text-left font-medium text-stone-800 bg-stone-50/40;
+  }
+  .tbl tbody tr:nth-child(even) td:not(.row-h):not(.total-col) {
+    background: rgba(245, 245, 244, 0.45);
+  }
+  .tbl tbody tr:hover td {
+    background: #fbf5f5 !important;
+  }
+  .tbl tbody tr.total-row td {
+    @apply font-semibold text-stone-900 border-t-2 border-stone-300;
+    background: linear-gradient(180deg, #f5f5f4 0%, #e7e5e4 100%) !important;
+  }
+  .tbl td.total-col {
+    @apply font-semibold bg-stone-50 border-l border-stone-200;
+  }
+
+  .bar-cell {
+    position: relative;
+    isolation: isolate;
+    @apply text-right;
+  }
+  .bar-cell .bar-fill {
+    position: absolute;
+    inset: 4px auto 4px 4px;
+    background: linear-gradient(90deg, #f5e6e6, rgba(117, 20, 17, 0.18));
+    border-radius: 3px;
+    z-index: 0;
+  }
+  .bar-cell .bar-text {
+    position: relative;
+    z-index: 1;
+    @apply px-3;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 text-[11.5px] font-medium px-2 py-0.5 rounded-full border;
+  }
+  .chip-stone {
+    @apply bg-stone-100 text-stone-700 border-stone-200;
+  }
 }

@@ -11,6 +11,7 @@ const ITEMS: Item[] = [
   { href: "/admin/campaigns", label: "Campaigns", feature: "campaigns" },
   { href: "/admin/appeals", label: "Appeals", feature: "appeals" },
   { href: "/admin/import", label: "Import", feature: "import" },
+  { href: "/admin/dedup", label: "Dedup", feature: "dedup" },
   { href: "/admin/exports", label: "Exports", feature: "exports" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/organizations", label: "Organizations" },

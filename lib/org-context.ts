@@ -10,12 +10,14 @@ export type Features = {
   donations?: boolean;
   donors?: boolean;
   reports?: boolean;
+  analysis?: boolean;
   funds?: boolean;
   campaigns?: boolean;
   appeals?: boolean;
   tax_summary?: boolean;
   import?: boolean;
   exports?: boolean;
+  dedup?: boolean;
   [key: string]: boolean | undefined;
 };
 
