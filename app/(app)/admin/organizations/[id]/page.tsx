@@ -31,7 +31,7 @@ export default async function OrganizationDetailPage({
   const { data: org } = await supabase
     .from("organizations")
     .select(
-      "id, slug, name, logo_url, primary_color, support_email, mailing_address, tax_statement_text, features",
+      "id, slug, name, logo_url, favicon_url, primary_color, tagline, support_email, mailing_address, tax_statement_text, features",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -47,7 +47,9 @@ export default async function OrganizationDetailPage({
     await updateOrganizationBranding({
       id: params.id,
       name: String(fd.get("name") ?? ""),
+      tagline: emptyToNull(fd.get("tagline")),
       logo_url: emptyToNull(fd.get("logo_url")),
+      favicon_url: emptyToNull(fd.get("favicon_url")),
       primary_color: emptyToNull(fd.get("primary_color")),
       support_email: emptyToNull(fd.get("support_email")),
       mailing_address: emptyToNull(fd.get("mailing_address")),
@@ -100,12 +102,22 @@ export default async function OrganizationDetailPage({
             <input name="name" defaultValue={org.name} required className="input" />
           </div>
           <div>
+            <label className="label">Tagline</label>
+            <input name="tagline" defaultValue={org.tagline ?? ""} className="input" placeholder="Donation Portal" />
+            <p className="text-xs text-stone-500 mt-1">Shown under the org name in the nav bar.</p>
+          </div>
+          <div>
             <label className="label">Logo URL</label>
             <input name="logo_url" defaultValue={org.logo_url ?? ""} className="input" placeholder="/logo.png or https://…" />
           </div>
           <div>
+            <label className="label">Favicon URL</label>
+            <input name="favicon_url" defaultValue={org.favicon_url ?? ""} className="input" placeholder="defaults to the logo" />
+          </div>
+          <div>
             <label className="label">Brand color (hex)</label>
             <input name="primary_color" defaultValue={org.primary_color ?? ""} className="input" placeholder="#751411" />
+            <p className="text-xs text-stone-500 mt-1">Sets the full brand-50…900 palette. Leave blank for the platform default.</p>
           </div>
           <div>
             <label className="label">Support email</label>

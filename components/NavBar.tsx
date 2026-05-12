@@ -39,6 +39,7 @@ export function NavBar({
 
   const orgName = activeOrg?.name ?? FALLBACK_NAME;
   const orgLogo = activeOrg?.logo_url ?? FALLBACK_LOGO;
+  const orgTagline = activeOrg?.tagline ?? "Donation Portal";
   const features = activeOrg?.features;
 
   return (
@@ -52,7 +53,7 @@ export function NavBar({
               {orgName}
             </span>
             <span className="text-[10px] uppercase tracking-[0.18em] text-stone-400">
-              Donation Portal
+              {orgTagline}
             </span>
           </div>
         </Link>

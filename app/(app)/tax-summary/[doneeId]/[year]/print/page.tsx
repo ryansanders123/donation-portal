@@ -1,9 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getActiveOrg } from "@/lib/org-context";
 import { PrintButtonClient } from "./PrintButtonClient";
-
-const ORG = process.env.NEXT_PUBLIC_ORG_NAME ?? "Organization";
-const ADDR = process.env.NEXT_PUBLIC_ORG_ADDRESS ?? "";
-const TAX = process.env.NEXT_PUBLIC_ORG_TAX_STATEMENT ?? "";
 
 type PrintRow = {
   date_received: string;
@@ -27,23 +24,31 @@ const nameOf = (rel: { name: string } | { name: string }[] | null | undefined): 
 export default async function PrintView({ params }: { params: { doneeId: string; year: string } }) {
   const year = parseInt(params.year, 10);
   const supabase = createSupabaseServerClient();
-  const { data: doneeData } = await supabase.from("donees").select("*").eq("id", params.doneeId).single();
-  const donee = (doneeData ?? null) as PrintDonee | null;
-  const { data: rowsData } = await supabase.from("donations")
-    .select("date_received,type,amount,funds(name)")
-    .eq("donee_id", params.doneeId)
-    .is("voided_at", null)
-    .gte("date_received", `${year}-01-01`).lt("date_received", `${year + 1}-01-01`)
-    .order("date_received");
-  const rows = (rowsData ?? []) as PrintRow[];
+  const [org, doneeRes, rowsRes] = await Promise.all([
+    getActiveOrg(),
+    supabase.from("donees").select("*").eq("id", params.doneeId).single(),
+    supabase.from("donations")
+      .select("date_received,type,amount,funds(name)")
+      .eq("donee_id", params.doneeId)
+      .is("voided_at", null)
+      .gte("date_received", `${year}-01-01`).lt("date_received", `${year + 1}-01-01`)
+      .order("date_received"),
+  ]);
+  const donee = (doneeRes.data ?? null) as PrintDonee | null;
+  const rows = (rowsRes.data ?? []) as PrintRow[];
   const total = rows.reduce((s: number, r) => s + Number(r.amount), 0);
+
+  const orgName = org?.name ?? process.env.NEXT_PUBLIC_ORG_NAME ?? "Organization";
+  const orgAddr = org?.mailing_address ?? process.env.NEXT_PUBLIC_ORG_ADDRESS ?? "";
+  const orgTax = org?.tax_statement_text ?? process.env.NEXT_PUBLIC_ORG_TAX_STATEMENT ?? "";
+  const brandColor = org?.primary_color ?? "#751411";
 
   return (
     <html>
       <body>
         <style>{`
           body { font-family: Georgia, serif; color: #222; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; }
-          h1 { font-size: 1.75rem; margin: 0; color: #751411; }
+          h1 { font-size: 1.75rem; margin: 0; color: ${brandColor}; }
           table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
           th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ccc; }
           td.r, th.r { text-align: right; }
@@ -51,8 +56,8 @@ export default async function PrintView({ params }: { params: { doneeId: string;
           @media print { .noprint { display: none; } }
         `}</style>
         <header>
-          <h1>{ORG}</h1>
-          <div style={{ whiteSpace: "pre-line", color: "#555" }}>{ADDR}</div>
+          <h1>{orgName}</h1>
+          <div style={{ whiteSpace: "pre-line", color: "#555" }}>{orgAddr}</div>
         </header>
         <section style={{ marginTop: "2rem" }}>
           <div><strong>Donor:</strong> {donee?.name}</div>
@@ -80,7 +85,7 @@ export default async function PrintView({ params }: { params: { doneeId: string;
             ))}
           </tbody>
         </table>
-        <div className="footer">{TAX}</div>
+        <div className="footer">{orgTax}</div>
         <PrintButtonClient />
       </body>
     </html>

@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { currentAppUser } from "@/lib/auth";
+import { getActiveOrg } from "@/lib/org-context";
 import { getMonthlyTotals } from "@/lib/dashboard";
 import { DonationsChart } from "@/components/DonationsChart";
 
-const ORG = process.env.NEXT_PUBLIC_ORG_NAME ?? "Donation Portal";
-
 export default async function Home() {
-  const user = await currentAppUser();
+  const [user, org, data] = await Promise.all([
+    currentAppUser(),
+    getActiveOrg(),
+    getMonthlyTotals(),
+  ]);
   const isAdmin = user?.role === "admin";
-  const data = await getMonthlyTotals();
+  const orgName = org?.name ?? process.env.NEXT_PUBLIC_ORG_NAME ?? "Donation Portal";
 
   const actions = [
     {
@@ -91,7 +94,7 @@ export default async function Home() {
           )}
         </div>
         <h1 className="page-title text-balance">
-          Welcome to <span className="text-brand-700">{ORG}</span>
+          Welcome to <span className="text-brand-700">{orgName}</span>
         </h1>
         <p className="page-subtitle text-base md:text-lg max-w-2xl">
           Record contributions, track fund performance, and prepare donor tax

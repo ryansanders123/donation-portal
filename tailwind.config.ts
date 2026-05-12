@@ -15,19 +15,22 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        // brand palette resolves to per-org CSS variables emitted by
+        // <BrandStyle /> in app/(app)/layout.tsx. globals.css ships the
+        // CCMC burgundy defaults for anonymous routes.
         brand: {
-          DEFAULT: "#751411",
-          light: "#c2a3a6",
-          50: "#fbf5f5",
-          100: "#f5e6e6",
-          200: "#e8c8c8",
-          300: "#d5a3a3",
-          400: "#bd7978",
-          500: "#a15554",
-          600: "#873d3b",
-          700: "#751411",
-          800: "#601110",
-          900: "#500f0e",
+          DEFAULT: "rgb(var(--brand-700) / <alpha-value>)",
+          light:   "rgb(var(--brand-300) / <alpha-value>)",
+          50:  "rgb(var(--brand-50)  / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
         },
       },
       boxShadow: {

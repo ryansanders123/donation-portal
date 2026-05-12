@@ -23,9 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const org = await getActiveOrg();
     const name = org?.name ?? FALLBACK_ORG_NAME;
+    const iconUrl = org?.favicon_url ?? org?.logo_url ?? null;
     return {
       title: name,
       description: `${name} — donation management portal`,
+      ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
     };
   } catch {
     return {

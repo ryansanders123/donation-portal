@@ -70,7 +70,9 @@ export async function createOrganization(input: {
 export async function updateOrganizationBranding(input: {
   id: string;
   name: string;
+  tagline?: string | null;
   logo_url: string | null;
+  favicon_url?: string | null;
   primary_color: string | null;
   support_email: string | null;
   mailing_address: string | null;
@@ -82,7 +84,9 @@ export async function updateOrganizationBranding(input: {
     .from("organizations")
     .update({
       name: input.name.trim(),
+      tagline: input.tagline ?? null,
       logo_url: input.logo_url,
+      favicon_url: input.favicon_url ?? null,
       primary_color: input.primary_color,
       support_email: input.support_email,
       mailing_address: input.mailing_address,

@@ -16,6 +16,7 @@ export type Features = {
   tax_summary?: boolean;
   import?: boolean;
   exports?: boolean;
+  dedup?: boolean;
   [key: string]: boolean | undefined;
 };
 
@@ -24,7 +25,9 @@ export type Organization = {
   slug: string;
   name: string;
   logo_url: string | null;
+  favicon_url: string | null;
   primary_color: string | null;
+  tagline: string | null;
   support_email: string | null;
   mailing_address: string | null;
   tax_statement_text: string | null;
@@ -33,7 +36,7 @@ export type Organization = {
 };
 
 const ORG_COLUMNS =
-  "id, slug, name, logo_url, primary_color, support_email, mailing_address, tax_statement_text, features, created_at";
+  "id, slug, name, logo_url, favicon_url, primary_color, tagline, support_email, mailing_address, tax_statement_text, features, created_at";
 
 // The active organization for the current request. Resolved by
 // public.current_org_id() (reads public.users.organization_id under
