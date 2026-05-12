@@ -7,7 +7,7 @@ and annual totals, and generate donor tax statements.
 
 The first organization on the platform is **Catholic Campus Ministry (CCMC)**.
 
-**Live:** https://ccm.pinnacledatascience.com
+**Live:** https://ccmc.pinnacledatascience.com
 **Hosting:** Vercel (auto-deploys on push to `main`)
 **Database + Auth:** Supabase (project ref `eqlutbgwsnyhdkaubjbh`)
 
@@ -145,8 +145,8 @@ node scripts/apply-migrations.mjs
   (`db.<ref>.supabase.co`) has no IPv4 record. Use the session-mode pooler
   at `aws-1-us-east-2.pooler.supabase.com:5432`.
 - **OAuth + Supabase Site URL.** Site URL must be
-  `https://ccm.pinnacledatascience.com` and redirect allow-list must
-  include `https://ccm.pinnacledatascience.com/**`. Otherwise sign-in
+  `https://ccmc.pinnacledatascience.com` and redirect allow-list must
+  include `https://ccmc.pinnacledatascience.com/**`. Otherwise sign-in
   redirects bounce to `localhost:3000`.
 
 ## Seeded admin

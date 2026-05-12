@@ -4,7 +4,7 @@ Manual verification against the 12 spec criteria from the implementation plan
 (`docs/superpowers/plans/2026-04-16-donation-mgmt.md`, Task 5.3).
 
 Fill in the status column as each criterion is verified on
-`https://ccm.pinnacledatascience.com` (or a preview deployment if validating
+`https://ccmc.pinnacledatascience.com` (or a preview deployment if validating
 pre-cutover). Link PRs or screenshots as evidence where useful.
 
 ## Criteria
@@ -68,7 +68,7 @@ pre-cutover). Link PRs or screenshots as evidence where useful.
 
 - [ ] Supabase Auth: enable Google + Microsoft with real OAuth clients
 - [ ] Supabase Auth: enable identity-linking-by-email
-- [ ] Supabase Auth: set Site URL = `https://ccm.pinnacledatascience.com`
+- [ ] Supabase Auth: set Site URL = `https://ccmc.pinnacledatascience.com`
 - [ ] Vercel env vars: set all entries from `.env.local.example` + `SUPABASE_SERVICE_ROLE_KEY`, redeploy
 - [ ] First sign-in on prod bootstraps admin, verified in Supabase Studio
 - [ ] Prod smoke: add a test donation, see it in the report, void it

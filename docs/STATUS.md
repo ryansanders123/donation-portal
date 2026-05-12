@@ -81,8 +81,8 @@ Project renamed from `ccm-demo` to `donation-portal` (display name "Pinnacle Don
 ## Open / next actions
 
 - **Supabase Auth URL Configuration**: Site URL =
-  `https://ccm.pinnacledatascience.com`, Redirect allow-list includes
-  `https://ccm.pinnacledatascience.com/**`.
+  `https://ccmc.pinnacledatascience.com`, Redirect allow-list includes
+  `https://ccmc.pinnacledatascience.com/**`.
 - Apply migration 0011 to the hosted pooler.
 - Rename GitHub repo + Vercel project + Supabase project to match new identifiers.
 - Enable GitHub branch protection on `main`.

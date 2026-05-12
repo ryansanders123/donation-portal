@@ -95,15 +95,15 @@ Supabase can match the email to the invite list.
 Still in Supabase:
 
 1. **Authentication → URL Configuration**.
-2. **Site URL**: `https://ccm.pinnacledatascience.com`.
+2. **Site URL**: `https://ccmc.pinnacledatascience.com`.
 3. **Redirect URLs**: add
-   - `https://ccm.pinnacledatascience.com/**`
+   - `https://ccmc.pinnacledatascience.com/**`
    - `http://localhost:3000/**` (for local dev)
 4. **Save**.
 
 ### Step 8 — Smoke test
 
-1. Open https://ccm.pinnacledatascience.com/login (use a private window).
+1. Open https://ccmc.pinnacledatascience.com/login (use a private window).
 2. Click **Continue with Microsoft**.
 3. Sign in with a personal `@outlook.com` whose email is on the invite list →
    should land on `/`.
