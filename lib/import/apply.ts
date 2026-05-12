@@ -12,7 +12,14 @@ import {
   externalRefKey,
   nameAddressKey,
 } from "./matchDonee";
-import { type DedupIndex, checkAndMark, makeEmptyDedup } from "./dedup";
+import {
+  type DedupIndex,
+  checkContentAndMark,
+  checkExternalAndMark,
+  contentHashFor,
+  externalDonationKey,
+  makeEmptyDedup,
+} from "./dedup";
 
 // ---- Index loaders ---------------------------------------------------
 //
@@ -79,13 +86,16 @@ export async function loadDedupIndex(
   for (;;) {
     const { data, error } = await supabase
       .from("donations")
-      .select("external_id")
-      .not("external_id", "is", null)
+      .select("source_name, external_id, content_hash")
+      .or("external_id.not.is.null,content_hash.not.is.null")
       .range(from, from + PAGE - 1);
-    if (error) throw new Error(`load donations.external_id: ${error.message}`);
+    if (error) throw new Error(`load donation dedup keys: ${error.message}`);
     if (!data || data.length === 0) break;
     for (const r of data) {
-      if (r.external_id) index.externalIds.add(String(r.external_id).toLowerCase());
+      if (r.source_name && r.external_id) {
+        index.externalIds.add(externalDonationKey(String(r.source_name), String(r.external_id)));
+      }
+      if (r.content_hash) index.contentHashes.add(String(r.content_hash));
     }
     if (data.length < PAGE) break;
     from += PAGE;
@@ -121,6 +131,15 @@ export async function loadTaxonomyCache(
   for (const c of campaigns.data ?? []) cache.campaigns.set(c.name.toLowerCase(), c.id);
   for (const a of appeals.data ?? []) cache.appeals.set(a.name.toLowerCase(), a.id);
   return cache;
+}
+
+function pendingDoneeKey(row: NormalizedRow, sourceName: string): string {
+  if (row.donor.external_id) return `external::${externalRefKey(sourceName, row.donor.external_id)}`;
+  if (row.donor.email) return `email::${row.donor.email.toLowerCase()}`;
+  if (row.donor.zip && row.donor.address_line1) {
+    return `address::${nameAddressKey(row.donor.name, row.donor.zip, row.donor.address_line1)}`;
+  }
+  return `row::${row.rowIndex}`;
 }
 
 async function ensureTaxonomyEntry(
@@ -175,16 +194,35 @@ export async function applyChunk(
     doneesMatched: 0,
   };
 
+  const candidateRows: NormalizedRow[] = [];
+  for (const row of rows) {
+    const externalCheck = checkExternalAndMark(row, ctx.sourceName, ctx.dedupIndex);
+    if (externalCheck.kind === "duplicate") {
+      result.duplicates++;
+      continue;
+    }
+    candidateRows.push(row);
+  }
+
   // Phase 1: resolve donees (create new ones in a single batch).
-  const newDoneeRows: Array<{ row: NormalizedRow; payload: Record<string, unknown> }> = [];
+  const newDoneeRows: Array<{ rows: NormalizedRow[]; payload: Record<string, unknown> }> = [];
+  const pendingDonees = new Map<string, number>();
   const rowToDoneeId = new Map<number, string>();
 
-  for (const row of rows) {
+  for (const row of candidateRows) {
     const match = matchDonee(row, ctx.doneeIndex, ctx.mapping, ctx.sourceName);
     if (match.kind === "existing") {
       rowToDoneeId.set(row.rowIndex, match.doneeId);
       result.doneesMatched++;
     } else {
+      const key = pendingDoneeKey(row, ctx.sourceName);
+      const existingPendingIndex = pendingDonees.get(key);
+      if (existingPendingIndex !== undefined) {
+        newDoneeRows[existingPendingIndex].rows.push(row);
+        result.doneesMatched++;
+        continue;
+      }
+
       const payload: Record<string, unknown> = {
         name: row.donor.name,
         email: row.donor.email,
@@ -197,7 +235,8 @@ export async function applyChunk(
         // created_by left null; the importing admin is logged on the batch
       };
       if (ctx.organizationId) payload.organization_id = ctx.organizationId;
-      newDoneeRows.push({ row, payload });
+      pendingDonees.set(key, newDoneeRows.length);
+      newDoneeRows.push({ rows: [row], payload });
     }
   }
 
@@ -213,21 +252,23 @@ export async function applyChunk(
       );
     }
     for (let i = 0; i < newDoneeRows.length; i++) {
-      const { row } = newDoneeRows[i];
+      const { rows: groupedRows } = newDoneeRows[i];
+      const primaryRow = groupedRows[0];
       const id = inserted[i].id;
-      rowToDoneeId.set(row.rowIndex, id);
-      indexDonee(ctx.doneeIndex, id, row.donor, ctx.sourceName);
+      for (const row of groupedRows) rowToDoneeId.set(row.rowIndex, id);
+      indexDonee(ctx.doneeIndex, id, primaryRow.donor, ctx.sourceName);
       result.doneesCreated++;
     }
 
     // Store external refs for the newly-created donees.
     const refs = newDoneeRows
-      .filter((r) => r.row.donor.external_id)
-      .map((r) => {
+      .flatMap((group) => group.rows)
+      .filter((row) => row.donor.external_id)
+      .map((row) => {
         const ref: Record<string, unknown> = {
-          donee_id: rowToDoneeId.get(r.row.rowIndex)!,
+          donee_id: rowToDoneeId.get(row.rowIndex)!,
           source_name: ctx.sourceName,
-          external_id: r.row.donor.external_id!,
+          external_id: row.donor.external_id!,
         };
         if (ctx.organizationId) ref.organization_id = ctx.organizationId;
         return ref;
@@ -242,7 +283,7 @@ export async function applyChunk(
 
   // Phase 2: resolve taxonomy, dedup-check, build donation payloads.
   const toInsert: Record<string, unknown>[] = [];
-  for (const row of rows) {
+  for (const row of candidateRows) {
     try {
       const doneeId = rowToDoneeId.get(row.rowIndex);
       if (!doneeId) {
@@ -284,14 +325,15 @@ export async function applyChunk(
         );
       }
 
-      const dup = checkAndMark(
-        row,
-        { doneeId, fundId, campaignId, appealId },
-        ctx.dedupIndex,
-      );
-      if (dup.kind === "duplicate") {
-        result.duplicates++;
-        continue;
+      let rowContentHash: string | null = null;
+      if (!row.external_id) {
+        const resolved = { doneeId, fundId, campaignId, appealId };
+        const dup = checkContentAndMark(row, resolved, ctx.dedupIndex);
+        if (dup.kind === "duplicate") {
+          result.duplicates++;
+          continue;
+        }
+        rowContentHash = contentHashFor(row, resolved);
       }
 
       const payload: Record<string, unknown> = {
@@ -305,7 +347,9 @@ export async function applyChunk(
         check_number: row.check_number,
         reference_id: row.reference_id,
         note: row.note,
+        source_name: ctx.sourceName,
         external_id: row.external_id,
+        content_hash: rowContentHash,
         import_batch_id: ctx.importBatchId,
         created_by: ctx.createdBy,
       };

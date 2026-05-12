@@ -5,12 +5,16 @@ import { contentHash } from "./hash";
 // existing donations (server-side).
 
 export type DedupIndex = {
-  externalIds: Set<string>; // lowercased
+  externalIds: Set<string>; // `${source_name}::${external_id}`, lowercased
   contentHashes: Set<string>;
 };
 
 export function makeEmptyDedup(): DedupIndex {
   return { externalIds: new Set(), contentHashes: new Set() };
+}
+
+export function externalDonationKey(sourceName: string, externalId: string): string {
+  return `${sourceName.toLowerCase()}::${externalId.toLowerCase()}`;
 }
 
 // Compute a content hash for dedup-without-external-id. Caller supplies
@@ -33,20 +37,23 @@ export type DupCheck =
   | { kind: "duplicate"; reason: "external_id" | "content" }
   | { kind: "new" };
 
-// Check if this row would be a duplicate of an existing donation (in the
-// DB or already inserted in this batch). Updates the index when "new".
-export function checkAndMark(
+export function checkExternalAndMark(
+  row: NormalizedRow,
+  sourceName: string,
+  index: DedupIndex,
+): DupCheck {
+  if (!row.external_id) return { kind: "new" };
+  const key = externalDonationKey(sourceName, row.external_id);
+  if (index.externalIds.has(key)) return { kind: "duplicate", reason: "external_id" };
+  index.externalIds.add(key);
+  return { kind: "new" };
+}
+
+export function checkContentAndMark(
   row: NormalizedRow,
   resolved: { doneeId: string; fundId: string | null; campaignId: string | null; appealId: string | null },
   index: DedupIndex,
 ): DupCheck {
-  if (row.external_id) {
-    const k = row.external_id.toLowerCase();
-    if (index.externalIds.has(k)) return { kind: "duplicate", reason: "external_id" };
-    index.externalIds.add(k);
-    return { kind: "new" };
-  }
-
   const hash = contentHashFor(row, resolved);
   if (index.contentHashes.has(hash)) return { kind: "duplicate", reason: "content" };
   index.contentHashes.add(hash);

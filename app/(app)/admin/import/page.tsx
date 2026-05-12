@@ -219,6 +219,7 @@ export default function ImportPage() {
     setError(null);
     setStep("importing");
     setProgress({ processed: 0, total: rawRows.length });
+    let activeBatchId: string | null = null;
 
     try {
       const { batchId: bid } = await createBatch({
@@ -229,6 +230,7 @@ export default function ImportPage() {
         mapping,
         rowsTotal: rawRows.length,
       });
+      activeBatchId = bid;
       setBatchId(bid);
 
       if (saveMapping) {
@@ -273,8 +275,8 @@ export default function ImportPage() {
     } catch (e) {
       const msg = (e as Error).message;
       setError(msg);
-      if (batchId) {
-        try { await failBatch(batchId, msg); } catch {}
+      if (activeBatchId) {
+        try { await failBatch(activeBatchId, msg); } catch {}
       }
       setStep("result");
     }
