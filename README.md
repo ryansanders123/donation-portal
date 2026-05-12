@@ -1,158 +1,219 @@
 # Pinnacle Donations
 
-A multi-tenant donation management portal. Each organization sees its own
-donors, donations, funds, campaigns, and reports — fully isolated by RLS at
-the database level. Users record cash / check / online gifts, see monthly
-and annual totals, and generate donor tax statements.
+A multi-tenant donor system of record for small nonprofit teams. Each
+organization gets isolated donors, donations, funds, campaigns, reports,
+imports, branding, feature flags, and admin controls. Tenant isolation is
+enforced by Supabase/Postgres RLS.
 
-The first organization on the platform is **Catholic Campus Ministry (CCMC)**.
+The live production tenant is **Catholic Campus Ministry (CCMC)**.
 
-**Live:** https://ccmc.pinnacledatascience.com
-**Hosting:** Vercel (auto-deploys on push to `main`)
-**Database + Auth:** Supabase (project ref `eqlutbgwsnyhdkaubjbh`)
+- **Live:** https://ccmc.pinnacledatascience.com
+- **Alias:** https://ccm-demo-alpha.vercel.app
+- **Hosting:** Vercel, auto-deploys from `main`
+- **Database + Auth:** Supabase project `eqlutbgwsnyhdkaubjbh`
 
 ## Stack
 
-- **Next.js 14** App Router (TypeScript, Server Actions, Route Handlers)
-- **Supabase** — Postgres + Auth (`@supabase/ssr`)
-- **Tailwind** with a custom brand palette
-- **Recharts** for the home dashboard chart
-- **Vitest** for unit tests, **Playwright** for smoke e2e
-- **Zod** for input validation
+- **Next.js 15.5.18** App Router, TypeScript, Server Actions, Route Handlers
+- **Supabase** Postgres + Auth via `@supabase/ssr`
+- **Tailwind CSS** with per-organization branding
+- **Recharts**, `react-simple-maps`, and `topojson-client` for dashboards and analysis
+- **Vitest** unit tests and **Playwright** smoke tests
+- **Zod** for server-side validation
 
-## Auth model
+## Current production state
 
-Three sign-in methods: Google OAuth, Microsoft (Entra) OAuth, and email magic
-link — all via Supabase Auth. Email-identity model: the `public.users` table
-is the source of truth, linked to `auth.users` by `auth_user_id`. First
-sign-in flows through `/auth/callback` → `runCallbackGate()` which matches
-the OAuth email to an invited row and links it. Non-invited users are
-rejected.
+- Multi-tenant app is live at `https://ccmc.pinnacledatascience.com`.
+- GitHub repo is `ryansanders123/donation-portal`.
+- Migrations are applied through `0023_pds_report_rpc.sql`.
+- Security hardening is live:
+  - Platform-wide org management requires `users.platform_admin = true`.
+  - Tenant admins can manage only their active organization.
+  - `users_with_providers` is no longer queried by the app and authenticated grants were revoked.
+  - `/api/whoami` is admin gated.
+  - CSV exports neutralize spreadsheet formula injection.
+  - The app no longer uses raw `DATABASE_URL` or `pg` at runtime.
+- PDS reporting data still lives in the same Supabase database under schema `pds`.
+  Because the `pds` schema is not exposed through PostgREST, report pages read
+  it through public RPC wrappers:
+  - `public.pds_ar_vr_vh_rows()`
+  - `public.pds_accudata_ubi_rows()`
+- Latest verified checks:
+  - `npx.cmd tsc --noEmit`
+  - `npm.cmd run lint`
+  - `npm.cmd test`
+  - `npm.cmd run build`
+  - `npm.cmd audit --omit=dev`
 
-See [`docs/sso-setup.md`](docs/sso-setup.md) for the one-time external setup
-required to enable Microsoft sign-in.
+## Live data snapshot
 
-RLS is enforced on every table. Policies use `public.is_app_user()` and
-`public.is_admin()` for role gating, plus `organization_id = public.current_org_id()`
-for tenant isolation. Admin-only mutations additionally require `is_admin()`.
+As of 2026-05-12:
 
-## Multi-tenant model
+| Table | Rows |
+|---|---:|
+| `public.organizations` | 2 |
+| `public.users` | 3 |
+| `public.user_organizations` | 6 |
+| `public.donees` | 1,885 |
+| `public.donations` | 12,341 |
+| `public.import_batches` | 2 |
+| `public.import_field_mappings` | 0 |
+| `pds.ar_vr_vh_summary` | 16,861 |
+| `pds.accudata_ubi` | 14,800 |
 
-| Table | Org-scoped? | Notes |
+Current org slugs: `ccmc`, `wrh`.
+
+## Auth and roles
+
+Sign-in methods are Google OAuth, Microsoft/Entra OAuth, and email magic link,
+all through Supabase Auth. The source of truth is `public.users`, linked to
+`auth.users` through `auth_user_id`.
+
+First sign-in flows through `/auth/callback` and `runCallbackGate()`. The
+callback matches the OAuth email to an invited `public.users` row, links
+`auth_user_id`, and rejects non-invited users.
+
+Role model:
+
+| Role | Where | Scope |
 |---|---|---|
-| `organizations` | n/a | The tenant table itself. |
-| `users` | yes | A user belongs to exactly one organization. |
-| `donees`, `funds`, `donations`, `campaigns`, `appeals` | yes | All have `organization_id` FK with `current_org_id()` default. |
+| Platform admin | `users.platform_admin = true` | Can manage all organizations and platform-level records. |
+| Tenant admin | `user_organizations.role = 'admin'` | Can manage users, funds, imports, branding, and reports for the active organization. |
+| Tenant member | `user_organizations.role = 'member'` | Can use donation and reporting workflows allowed by org feature flags. |
 
-`current_org_id()` resolves the calling user's `organization_id` from
-`public.users`. Column defaults auto-populate `organization_id` on inserts,
-so application code doesn't need to set it explicitly (the admin invite
-path is the one exception — it sets it explicitly for clarity).
+`users.organization_id` stores the active organization. `user_organizations`
+stores every organization membership.
+
+See `docs/sso-setup.md` for external OAuth setup.
+
+## Tenant model
+
+| Table or area | Scope | Notes |
+|---|---|---|
+| `organizations` | Platform | Tenant records, branding, feature flags, and status. |
+| `users` | Platform identity + active org | Email identity, linked Supabase auth user, active org, platform admin flag. |
+| `user_organizations` | Org membership | Many-to-many membership with tenant role. |
+| `donees`, `funds`, `donations`, `campaigns`, `appeals` | Organization | RLS uses `organization_id = current_org_id()`. |
+| `import_batches`, `import_field_mappings` | Organization | CSV import tracking and mapping history. |
+| `donee_external_refs`, `donee_merges`, `donee_dup_rejections` | Organization | Dedup and merge audit trail. |
+| `pds.*` | Reporting schema | Same database, read by public RPC wrappers. |
 
 ## Project layout
 
-```
+```text
 app/
-  (app)/                  # authed area — layout gates on currentAppUser()
-    page.tsx              # home: quick actions + giving-over-time chart
-    donations/
-      add/                # add donation form (server action)
-      [id]/void/          # hardened void flow — admin only
-    report/               # monthly report + CSV export
-    tax-summary/          # annual donor statements + print view
+  (app)/
+    page.tsx
     admin/
-      funds/              # manage funds (admin)
-      users/              # invite + manage users (admin)
-      campaigns/          # manage campaigns (admin)
-      appeals/            # manage appeals (admin)
-  (public)/               # login + errors
-  auth/callback/          # OAuth code exchange + gate
-  auth/signout/
-  api/whoami/             # diagnostic endpoint (auth + RLS state)
+      organizations/
+      users/
+      funds/
+      campaigns/
+      appeals/
+    donations/
+      add/
+      import/
+      dedupe/
+      [id]/void/
+    donors/
+    report/
+    reports/
+      ar-vr-vh/
+      accudata-ubi/
+    tax-summary/
+  (public)/
+  api/
+    exports/
+    whoami/
+  auth/
 components/
-  DonationsChart.tsx      # Recharts line chart (total / by-fund)
-  DoneePicker.tsx         # server-action-driven autocomplete
 lib/
-  auth.ts                 # currentAppUser, requireUser, requireAdmin
-  auth-callback.ts        # email-link gate for OAuth first sign-in
-  dashboard.ts            # getMonthlyTotals() — 36-month aggregation
-  reports.ts              # summarize() helpers
-  validators.ts           # Zod schemas (donation, donee, void, invite, fund)
-  supabase/server.ts      # request-scoped server client
-  supabase/service.ts     # service-role client (server-only)
-supabase/migrations/      # 0001..0011 — see below
+  auth.ts
+  auth-callback.ts
+  csv.ts
+  dashboard.ts
+  dedup*.ts
+  org*.ts
+  pds-db.ts
+  reports.ts
+  supabase/
+supabase/migrations/
 scripts/
-  apply-migrations.mjs    # runs all migrations against pooler
-  import-transactions.mjs # bulk-import CSV donations
-  seed-donees.mjs         # perf-test donees (+ --cleanup)
-  verify-migrations.mjs
 tests/
-  lib/                    # vitest unit tests (auth, csv, reports, validators)
-  e2e/                    # playwright smoke
-  perf/                   # autocomplete p95 benchmark
 docs/
-  superpowers/
-    specs/                # design specs by date
-    plans/                # implementation plans by date
-  STATUS.md               # what's built vs. plan
-  sso-setup.md            # external auth provider setup
-  ops/done-criteria.md    # acceptance checklist
 ```
 
 ## Migrations
 
-| # | File | Purpose |
-|---|------|---------|
-| 0001 | `extensions.sql` | `pgcrypto`, `citext` |
-| 0002 | `tables.sql` | `users`, `donees`, `funds`, `donations` |
-| 0003 | `indexes.sql` | Query + search indexes |
-| 0004 | `functions.sql` | `current_app_user()`, `is_admin()`, `users_with_providers` view |
-| 0005 | `rls.sql` | Row-level security policies |
-| 0006 | `fix_rls_composite_null.sql` | Bugfix — replaces broken composite checks with `is_app_user()` |
-| 0006 | `triggers.sql` | Donation immutable fields + last-admin guard |
-| 0007 | `seed.sql` | Default `Anon` donee + `General` fund |
-| 0008 | `campaigns_appeals.sql` | `campaigns`, `appeals` tables + RLS |
-| 0009 | `donee_address_split.sql` | Structured address columns on donees |
-| 0010 | `donor_list_view.sql` | `donor_list_v` aggregating lifetime + last-gift |
-| 0011 | `multi_tenant_foundation.sql` | `organizations` + `organization_id` FK + per-org RLS |
+The migration runner tracks applied files in `public.schema_migrations`.
+Historical duplicate prefixes are intentional and must be treated as distinct
+filenames.
+
+| File | Purpose |
+|---|---|
+| `0001_extensions.sql` | `pgcrypto`, `citext` |
+| `0002_tables.sql` | Core donation tables |
+| `0003_indexes.sql` | Search and report indexes |
+| `0004_functions.sql` | Initial auth helpers |
+| `0005_rls.sql` | Initial RLS policies |
+| `0006_fix_rls_composite_null.sql` | Fix composite-row RLS checks with `is_app_user()` |
+| `0006_triggers.sql` | Donation immutability and last-admin guard |
+| `0007_seed.sql` | Initial seed rows |
+| `0008_campaigns_appeals.sql` | Campaign and appeal tables |
+| `0009_donee_address_split.sql` | Structured donee address fields |
+| `0010_donor_list_view.sql` | Donor aggregate view |
+| `0011_multi_tenant_foundation.sql` | Organizations and org-scoped RLS |
+| `0012_csv_import.sql` | Import batch and mapping foundation |
+| `0013_csv_import_hardening.sql` | Import constraints and validation hardening |
+| `0014_branding_and_features.sql` | Org branding and feature flags |
+| `0014_user_organizations.sql` | Multi-org user memberships |
+| `0015_wrh_org_and_schema.sql` | WRH org and reporting schema foundation |
+| `0016_wrh_rls.sql` | WRH RLS support |
+| `0017_pds_schema_and_tables.sql` | PDS reporting tables |
+| `0018_pds_rls.sql` | PDS reporting RLS |
+| `0019_donor_dedup.sql` | Dedup tables and audit trail |
+| `0020_donor_dedup_functions.sql` | Dedup helper functions |
+| `0021_branding_extras.sql` | Additional branding fields |
+| `0022_security_hardening.sql` | Platform admin, admin gates, trigger hardening |
+| `0023_pds_report_rpc.sql` | Public RPC wrappers for PDS report reads |
 
 ## Running locally
 
 ```bash
-cp .env.local.example .env.local       # fill in Supabase URL + keys
+cp .env.local.example .env.local
 npm install
-npm run dev                            # http://localhost:3000
-npm test                               # vitest
-npm run test:e2e                       # playwright
+npm run dev
+npm test
+npm run test:e2e
 ```
 
-Apply migrations to the hosted DB (pooler, IPv4 — direct host is IPv6-only):
+Runtime app access uses Supabase URL and keys. Do not add raw `DATABASE_URL`
+usage back into app code.
+
+Apply migrations to the hosted database through the Supabase pooler:
 
 ```bash
 export SUPABASE_DB_URL="postgresql://postgres.eqlutbgwsnyhdkaubjbh:<password>@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
 node scripts/apply-migrations.mjs
 ```
 
-## Known issues / gotchas
+Use `BASELINE_EXISTING=1` only when attaching migration tracking to an existing
+database that already has the schema but no `public.schema_migrations` history.
 
-- **Composite-NULL RLS.** Postgres defines `composite IS NOT NULL` as TRUE
-  only when *every* field is non-null. `current_app_user()` returns a
-  `public.users` row, and most rows have NULL fields, so the original
-  policies silently filtered every SELECT. Migration 0006 introduces
-  `is_app_user()` which uses `EXISTS` instead — use this helper in any
-  future policies.
-- **Pooler vs direct host.** The direct Postgres host
-  (`db.<ref>.supabase.co`) has no IPv4 record. Use the session-mode pooler
-  at `aws-1-us-east-2.pooler.supabase.com:5432`.
-- **OAuth + Supabase Site URL.** Site URL must be
-  `https://ccmc.pinnacledatascience.com` and redirect allow-list must
-  include `https://ccmc.pinnacledatascience.com/**`. Otherwise sign-in
-  redirects bounce to `localhost:3000`.
+## Operational gotchas
 
-## Seeded admin
+- The direct Supabase DB host is IPv6-only in this environment. Use the
+  session-mode pooler for migrations and audits.
+- Do not query `.schema("pds")` from Supabase JS. The `pds` schema is not
+  exposed through PostgREST. Use the public RPC wrappers in `lib/pds-db.ts`.
+- Do not restore app reads from `users_with_providers`; the authenticated grant
+  is intentionally revoked.
+- Platform admin and tenant admin are separate. Do not use tenant admin checks
+  for platform-wide organization pages.
+- Production Vercel env vars are configured. Preview/development env setup via
+  CLI has not been fully normalized, so configure those in the Vercel dashboard
+  if preview deployments need the same environment.
 
-- `rpsanders01@gmail.com` — role `admin`, organization CCMC
+## Seeded platform admin
 
-## Imported data
-
-12,023 historical CCMC transactions (2001–2026), 1,756 donees, 7 funds.
+- `rpsanders01@gmail.com`

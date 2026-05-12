@@ -1,5 +1,8 @@
 # Cutover & Rename: Demo → Prod, Multi-Tenant Foundation
 
+> Historical design. This file preserves the 2026-05-05 cutover snapshot. See
+> `docs/STATUS.md` and `README.md` for the current production state.
+
 **Date:** 2026-05-05
 **Status:** Approved (ready for plan)
 **Owner:** Ryan Sanders

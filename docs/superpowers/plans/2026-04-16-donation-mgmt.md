@@ -1,5 +1,10 @@
 # Donation Management Template Implementation Plan
 
+> Historical plan. This file preserves the original implementation plan and
+> intentionally does not describe current production state. See
+> `docs/STATUS.md` and `README.md` for the current app, database, deployment,
+> and security model.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a nonprofit donation management web app (SSO-gated, invite-only, single-tenant per deployment) deployed to `ccm.pinnacledatascience.com` as the first instance of a reusable template.

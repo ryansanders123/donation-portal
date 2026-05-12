@@ -1,5 +1,8 @@
 # CSV Import
 
+> Historical design. CSV import has since been implemented. See
+> `docs/STATUS.md` and `README.md` for the current production state.
+
 **Date:** 2026-05-11
 **Status:** Approved (ready for plan)
 **Owner:** Ryan Sanders

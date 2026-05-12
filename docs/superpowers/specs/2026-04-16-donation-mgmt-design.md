@@ -1,5 +1,10 @@
 # Donation Management Template — Design
 
+> Historical design. This file preserves the original design snapshot and
+> intentionally does not describe current production state. See
+> `docs/STATUS.md` and `README.md` for the current app, database, deployment,
+> and security model.
+
 **Date:** 2026-04-16
 **First deployment:** Catholic Campus Ministry (CCM), `ccm.pinnacledatascience.com`
 **Status:** Design approved in brainstorming. Proceeding to implementation plan.
