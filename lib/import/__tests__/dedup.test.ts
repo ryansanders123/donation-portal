@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { checkAndMark, contentHashFor, makeEmptyDedup } from "../dedup";
+import {
+  checkContentAndMark,
+  checkExternalAndMark,
+  contentHashFor,
+  externalDonationKey,
+  makeEmptyDedup,
+} from "../dedup";
 import type { NormalizedRow } from "../types";
 
 function row(overrides: Partial<NormalizedRow>): NormalizedRow {
@@ -31,13 +37,13 @@ function row(overrides: Partial<NormalizedRow>): NormalizedRow {
   };
 }
 
-describe("checkAndMark — external_id path", () => {
+describe("checkExternalAndMark — external_id path", () => {
   it("flags duplicates when external_id has already been seen", () => {
     const idx = makeEmptyDedup();
-    idx.externalIds.add("txn-1");
-    const r = checkAndMark(
+    idx.externalIds.add(externalDonationKey("GiveCentral", "txn-1"));
+    const r = checkExternalAndMark(
       row({ external_id: "TXN-1" }),
-      { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
+      "GiveCentral",
       idx,
     );
     expect(r).toEqual({ kind: "duplicate", reason: "external_id" });
@@ -45,41 +51,48 @@ describe("checkAndMark — external_id path", () => {
 
   it("inserts new external_id and marks the index", () => {
     const idx = makeEmptyDedup();
-    const r = checkAndMark(
+    const r = checkExternalAndMark(
       row({ external_id: "TXN-2" }),
-      { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
+      "GiveCentral",
       idx,
     );
     expect(r.kind).toBe("new");
-    expect(idx.externalIds.has("txn-2")).toBe(true);
+    expect(idx.externalIds.has(externalDonationKey("GiveCentral", "txn-2"))).toBe(true);
   });
 
   it("dupes the same external_id appearing twice in one batch", () => {
     const idx = makeEmptyDedup();
-    const r1 = checkAndMark(
+    const r1 = checkExternalAndMark(
       row({ external_id: "TXN-3" }),
-      { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
+      "GiveCentral",
       idx,
     );
-    const r2 = checkAndMark(
+    const r2 = checkExternalAndMark(
       row({ external_id: "TXN-3" }),
-      { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
+      "GiveCentral",
       idx,
     );
     expect(r1.kind).toBe("new");
     expect(r2.kind).toBe("duplicate");
   });
+
+  it("allows the same external_id from different sources", () => {
+    const idx = makeEmptyDedup();
+    checkExternalAndMark(row({ external_id: "TXN-4" }), "GiveCentral", idx);
+    const r = checkExternalAndMark(row({ external_id: "TXN-4" }), "Stripe", idx);
+    expect(r.kind).toBe("new");
+  });
 });
 
-describe("checkAndMark — content hash path", () => {
+describe("checkContentAndMark — content hash path", () => {
   it("flags duplicates by content when no external_id", () => {
     const idx = makeEmptyDedup();
-    const r1 = checkAndMark(
+    const r1 = checkContentAndMark(
       row({}),
       { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
       idx,
     );
-    const r2 = checkAndMark(
+    const r2 = checkContentAndMark(
       row({}),
       { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
       idx,
@@ -91,12 +104,12 @@ describe("checkAndMark — content hash path", () => {
 
   it("different donee → different hash", () => {
     const idx = makeEmptyDedup();
-    checkAndMark(
+    checkContentAndMark(
       row({}),
       { doneeId: "d1", fundId: "f1", campaignId: null, appealId: null },
       idx,
     );
-    const r = checkAndMark(
+    const r = checkContentAndMark(
       row({}),
       { doneeId: "d2", fundId: "f1", campaignId: null, appealId: null },
       idx,

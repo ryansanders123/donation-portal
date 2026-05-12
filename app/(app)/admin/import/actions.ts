@@ -71,9 +71,15 @@ export async function validateBatch(input: {
   // unique to this row index — guaranteed not to collide with existing
   // donations.
   const { matchDonee } = await import("@/lib/import/matchDonee");
-  const { checkAndMark } = await import("@/lib/import/dedup");
+  const { checkContentAndMark, checkExternalAndMark } = await import("@/lib/import/dedup");
 
   for (const row of normalized) {
+    const ext = checkExternalAndMark(row, input.sourceName, dedupIndex);
+    if (ext.kind === "duplicate") {
+      wouldSkipDuplicate++;
+      continue;
+    }
+
     const match = matchDonee(row, doneeIndex, input.mapping, input.sourceName);
     const doneeId =
       match.kind === "existing"
@@ -82,13 +88,19 @@ export async function validateBatch(input: {
     if (match.kind === "existing") wouldMatchExistingDonees++;
     else wouldCreateNewDonees++;
 
-    const dup = checkAndMark(
-      row,
-      { doneeId, fundId: row.fund_name, campaignId: row.campaign_name, appealId: row.appeal_name },
-      dedupIndex,
-    );
-    if (dup.kind === "duplicate") wouldSkipDuplicate++;
-    else wouldInsert++;
+    if (!row.external_id) {
+      const dup = checkContentAndMark(
+        row,
+        { doneeId, fundId: row.fund_name, campaignId: row.campaign_name, appealId: row.appeal_name },
+        dedupIndex,
+      );
+      if (dup.kind === "duplicate") {
+        wouldSkipDuplicate++;
+        continue;
+      }
+    }
+
+    wouldInsert++;
   }
 
   return {
