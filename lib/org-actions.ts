@@ -52,6 +52,7 @@ export async function createOrganization(input: {
         donations: true,
         donors: true,
         reports: true,
+        analysis: true,
         funds: true,
         campaigns: true,
         appeals: true,
