@@ -1,8 +1,6 @@
 import type { Organization } from "@/lib/org-context";
 
-// Renders the org's contact info at the bottom of every authenticated
-// page. Falls back gracefully when fields are NULL — empty lines just
-// don't render. Anonymous routes don't include a footer at all.
+// Renders the org's contact info at the bottom of every authenticated page.
 export function AppFooter({ org }: { org: Organization | null }) {
   const year = new Date().getFullYear();
   if (!org) return null;
@@ -11,7 +9,7 @@ export function AppFooter({ org }: { org: Organization | null }) {
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-stone-500">
         <div>
           <div className="font-medium text-stone-700">{org.name}</div>
-          <div className="mt-0.5">© {year} {org.name}. All rights reserved.</div>
+          <div className="mt-0.5">&copy; {year} {org.name}. All rights reserved.</div>
         </div>
         <div className="md:text-center">
           {org.support_email && (

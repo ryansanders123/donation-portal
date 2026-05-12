@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/org-context";
+import { parseHex } from "@/lib/brand";
 import { PrintButtonClient } from "./PrintButtonClient";
 
 type PrintRow = {
@@ -41,7 +42,7 @@ export default async function PrintView({ params }: { params: { doneeId: string;
   const orgName = org?.name ?? process.env.NEXT_PUBLIC_ORG_NAME ?? "Organization";
   const orgAddr = org?.mailing_address ?? process.env.NEXT_PUBLIC_ORG_ADDRESS ?? "";
   const orgTax = org?.tax_statement_text ?? process.env.NEXT_PUBLIC_ORG_TAX_STATEMENT ?? "";
-  const brandColor = org?.primary_color ?? "#751411";
+  const brandColor = org?.primary_color && parseHex(org.primary_color) ? org.primary_color : "#751411";
 
   return (
     <html>

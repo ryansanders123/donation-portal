@@ -1,9 +1,9 @@
--- 0017_branding_extras.sql
+-- 0021_branding_extras.sql
 -- More branding knobs: tagline (the NavBar subtitle, currently the
 -- hardcoded "Donation Portal") and favicon_url (defaults to logo_url
 -- when null). Both optional; the app falls back gracefully.
 --
--- Sequenced after 0015/0016 (donor dedup) so the live DB picks this up
+-- Sequenced after 0019/0020 (donor dedup) so the live DB picks this up
 -- without renumbering.
 
 ALTER TABLE public.organizations

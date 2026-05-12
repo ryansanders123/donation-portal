@@ -98,7 +98,7 @@ export default async function Home() {
         </h1>
         <p className="page-subtitle text-base md:text-lg max-w-2xl">
           Record contributions, track fund performance, and prepare donor tax
-          statements — all in one place.
+          statements - all in one place.
         </p>
       </section>
 

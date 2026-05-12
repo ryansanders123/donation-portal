@@ -26,13 +26,13 @@ export async function generateMetadata(): Promise<Metadata> {
     const iconUrl = org?.favicon_url ?? org?.logo_url ?? null;
     return {
       title: name,
-      description: `${name} — donation management portal`,
+      description: `${name} - donation management portal`,
       ...(iconUrl ? { icons: { icon: iconUrl } } : {}),
     };
   } catch {
     return {
       title: FALLBACK_ORG_NAME,
-      description: `${FALLBACK_ORG_NAME} — donation management portal`,
+      description: `${FALLBACK_ORG_NAME} - donation management portal`,
     };
   }
 }
