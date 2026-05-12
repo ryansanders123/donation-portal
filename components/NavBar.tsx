@@ -68,6 +68,9 @@ export function NavBar({
           {feature(features, "reports") && (
             <NavLink href="/report">Report</NavLink>
           )}
+          {feature(features, "analysis") && (
+            <NavLink href="/reports" matchPrefix>Analysis</NavLink>
+          )}
           {feature(features, "tax_summary") && (
             <NavLink href="/tax-summary" matchPrefix>Tax</NavLink>
           )}
@@ -114,6 +117,9 @@ export function NavBar({
           )}
           {feature(features, "reports") && (
             <NavLink href="/report">Report</NavLink>
+          )}
+          {feature(features, "analysis") && (
+            <NavLink href="/reports" matchPrefix>Analysis</NavLink>
           )}
           {feature(features, "tax_summary") && (
             <NavLink href="/tax-summary" matchPrefix>Tax</NavLink>

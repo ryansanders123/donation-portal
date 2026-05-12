@@ -10,6 +10,7 @@ export type Features = {
   donations?: boolean;
   donors?: boolean;
   reports?: boolean;
+  analysis?: boolean;
   funds?: boolean;
   campaigns?: boolean;
   appeals?: boolean;

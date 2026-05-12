@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getDonorDetail } from "@/lib/donors";
 import { DonorChart } from "@/components/DonorChart";
+import { DonorDupPanel } from "@/components/DonorDupPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function DonorDetailPage({ params }: { params: { id: string
 
   return (
     <div className="animate-fade-in">
+      <DonorDupPanel doneeId={donee.id} />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Link href="/donors" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-brand-700 transition-colors">
