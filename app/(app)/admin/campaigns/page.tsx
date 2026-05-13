@@ -15,7 +15,7 @@ type CampaignRow = {
 };
 
 export default async function CampaignsPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: campaigns } = await supabase
     .from("campaigns")
     .select("*")

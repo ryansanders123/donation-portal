@@ -25,7 +25,7 @@ const nameOf = (rel: { name: string } | { name: string }[] | null | undefined): 
 export default async function PrintView({ params }: { params: Promise<{ doneeId: string; year: string }> }) {
   const { doneeId, year: yearParam } = await params;
   const year = parseInt(yearParam, 10);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const [org, doneeRes, rowsRes] = await Promise.all([
     getActiveOrg(),
     supabase.from("donees").select("*").eq("id", doneeId).single(),

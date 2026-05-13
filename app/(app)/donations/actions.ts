@@ -12,7 +12,7 @@ export async function searchDonees(q: string) {
   const trimmed = q.trim();
   if (trimmed.length < 2) return [];
   const safe = trimmed.replace(/[%_]/g, (m) => `\\${m}`); // escape LIKE wildcards
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("donees")
     .select("id,name,email,phone")
@@ -27,7 +27,7 @@ export async function createDonee(input: unknown) {
   const user = await requireUser();
   await assertFeature("donors");
   const parsed = doneeInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const payload = {
     name: parsed.name,
     email: parsed.email || null,
@@ -44,7 +44,7 @@ export async function addDonation(input: unknown) {
   const user = await requireUser();
   await assertFeature("donations");
   const parsed = donationInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const fundId = parsed.fund_id && parsed.fund_id !== "" ? parsed.fund_id : null;
   const campaignId = parsed.campaign_id && parsed.campaign_id !== "" ? parsed.campaign_id : null;
@@ -92,7 +92,7 @@ export async function addDonation(input: unknown) {
 export async function voidDonation(input: unknown) {
   const user = await requireAdmin();
   const parsed = voidInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("donations")
     .update({

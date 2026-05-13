@@ -11,7 +11,7 @@ import { requireUser, requireAdmin, requirePlatformAdmin } from "@/lib/auth";
 // users.role (so the active org's role is what is_admin() sees).
 export async function switchActiveOrg(slug: string): Promise<void> {
   await requireUser();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase.rpc("switch_active_org", { p_slug: slug });
   if (error) throw new Error(`switchActiveOrg: ${error.message}`);

@@ -17,7 +17,7 @@ type MergeRow = {
 };
 
 export default async function DedupHistoryPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: rawMerges } = await supabase
     .from("donee_merges")

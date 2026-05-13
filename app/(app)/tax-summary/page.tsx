@@ -81,7 +81,7 @@ export default async function TaxSummaryPage({
   }
 
   // Per-donor view (linked from donor detail page).
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: d } = await supabase
     .from("donees")
     .select("*")

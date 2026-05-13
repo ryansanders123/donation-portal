@@ -15,7 +15,7 @@ export type AppUser = {
 };
 
 export async function currentAppUser(): Promise<AppUser | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("current_app_user");
   if (error || !data) return null;
   const row = Array.isArray(data) ? data[0] : data;

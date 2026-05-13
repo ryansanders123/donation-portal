@@ -3,7 +3,7 @@ import { DonationForm } from "@/components/DonationForm";
 import { getActiveOrg, hasFeature } from "@/lib/org-context";
 
 export default async function AddDonationPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const org = await getActiveOrg();
   const showFunds = hasFeature(org, "funds");
   const showCampaigns = hasFeature(org, "campaigns");

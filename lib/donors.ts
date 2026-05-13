@@ -50,7 +50,7 @@ export type DonorDetail = {
 };
 
 export async function getDonorList(): Promise<DonorListRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   // Single round-trip via the donor_list_v view (migration 0010) — Postgres
   // does the aggregation; no in-app paging through 12k donations.
@@ -73,7 +73,7 @@ export async function getDonorList(): Promise<DonorListRow[]> {
 }
 
 export async function getDonorDetail(id: string): Promise<DonorDetail | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: donee, error: doneeErr } = await supabase
     .from("donees")

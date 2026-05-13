@@ -44,7 +44,7 @@ const ORG_COLUMNS =
 // RLS). Returns null if the user has no active org row (which should
 // only happen during the brief gap between invite and first sign-in).
 export async function getActiveOrg(): Promise<Organization | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("organizations")
     .select(ORG_COLUMNS)
@@ -65,7 +65,7 @@ export async function getActiveOrg(): Promise<Organization | null> {
 // Every org the calling user has a user_organizations row for.
 // Used by the OrgSwitcher dropdown.
 export async function listUserOrgs(): Promise<Organization[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("organizations")
     .select(ORG_COLUMNS)

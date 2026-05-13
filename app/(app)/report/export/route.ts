@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const appealFilter = url.searchParams.get("appeal") ?? "";
   const { start, end } = monthRange(y, m);
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let q = supabase
     .from("donations")
     .select("date_received,type,amount,check_number,reference_id,note,voided_at,void_reason,donees(name),funds(name),campaigns(name),appeals(name)")

@@ -12,7 +12,7 @@ export async function GET() {
   };
   const cookieNames = cookieStore.getAll().map((c) => c.name);
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: authUser, error: authErr } = await supabase.auth.getUser();
   const { data: sess } = await supabase.auth.getSession();

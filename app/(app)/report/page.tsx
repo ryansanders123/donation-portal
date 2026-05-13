@@ -40,7 +40,7 @@ export default async function ReportPage({
   if (!showFunds) fundFilter = "";
   if (!showCampaigns) campaignFilter = "";
   if (!showAppeals) appealFilter = "";
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const [{ data: fundsList }, { data: campaignsList }, { data: appealsList }] = await Promise.all([
     showFunds ? supabase.from("funds").select("id,name").order("name") : Promise.resolve({ data: [] }),

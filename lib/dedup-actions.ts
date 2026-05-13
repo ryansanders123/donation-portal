@@ -10,7 +10,7 @@ import { canonicalPair } from "@/lib/dedup";
 export async function rejectDupPair(input: { idA: string; idB: string }): Promise<void> {
   const admin = await requireAdmin();
   const { a, b } = canonicalPair(input.idA, input.idB);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("donee_dup_rejections")
     .upsert(
@@ -41,7 +41,7 @@ export async function mergeDonees(input: {
   merged: MergedFields;
 }): Promise<{ mergeId: string }> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("do_merge_donees", {
     p_winner_id: input.winnerId,
     p_loser_id: input.loserId,
@@ -57,7 +57,7 @@ export async function mergeDonees(input: {
 
 export async function undoMerge(mergeId: string): Promise<void> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("do_undo_merge", { p_merge_id: mergeId });
   if (error) throw new Error(`undoMerge: ${error.message}`);
   revalidatePath("/admin/dedup");

@@ -26,7 +26,7 @@ type FundRow = {
  * fund name to an array aligned to `months` (0 where there were no donations).
  */
 export async function getMonthlyTotals(): Promise<MonthlyTotals> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   // Build the 36-month window. Use UTC to avoid timezone drift.
   const now = new Date();

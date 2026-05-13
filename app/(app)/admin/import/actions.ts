@@ -27,7 +27,7 @@ export async function createBatch(input: {
   rowsTotal: number;
 }): Promise<{ batchId: string }> {
   const admin = await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("import_batches")
     .insert({
@@ -54,7 +54,7 @@ export async function validateBatch(input: {
   sourceName: string;
 }): Promise<ValidateSummary> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { rows: normalized, errors } = normalizeRows(input.rows, input.mapping);
   const doneeIndex = await loadDoneeIndex(supabase, input.sourceName);
@@ -121,7 +121,7 @@ export async function importChunk(input: {
   rows: RawRow[];
 }): Promise<ApplyChunkResult> {
   const admin = await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: batch, error: be } = await supabase
     .from("import_batches")
@@ -185,7 +185,7 @@ export async function importChunk(input: {
 
 export async function finalizeBatch(batchId: string): Promise<void> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("import_batches")
     .update({ status: "applied", applied_at: new Date().toISOString() })
@@ -201,7 +201,7 @@ export async function finalizeBatch(batchId: string): Promise<void> {
 
 export async function failBatch(batchId: string, reason: string): Promise<void> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("import_batches")
     .update({
@@ -214,7 +214,7 @@ export async function failBatch(batchId: string, reason: string): Promise<void> 
 
 export async function revertBatch(batchId: string): Promise<{ deleted: number }> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { count, error: ce } = await supabase
     .from("donations")
@@ -240,7 +240,7 @@ export async function revertBatch(batchId: string): Promise<{ deleted: number }>
 
 export async function loadSavedMapping(sourceName: string): Promise<Mapping | null> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("import_field_mappings")
     .select("mapping")
@@ -255,7 +255,7 @@ export async function saveSavedMapping(input: {
   mapping: Mapping;
 }): Promise<void> {
   const admin = await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("import_field_mappings")
     .upsert(
@@ -287,7 +287,7 @@ export type BatchSummary = {
 
 export async function listBatches(): Promise<BatchSummary[]> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("import_batches")
     .select(
@@ -302,7 +302,7 @@ export async function listBatches(): Promise<BatchSummary[]> {
 // already uploaded.
 export async function findPriorBatchByHash(fileHash: string): Promise<BatchSummary | null> {
   await requireAdmin();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("import_batches")
     .select(

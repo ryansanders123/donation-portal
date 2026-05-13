@@ -22,7 +22,7 @@ export type UbiRow = {
 async function fetchAll<T extends Record<string, unknown>>(
   rpcName: "pds_ar_vr_vh_rows" | "pds_accudata_ubi_rows",
 ): Promise<T[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const rows: T[] = [];
   let from = 0;
 

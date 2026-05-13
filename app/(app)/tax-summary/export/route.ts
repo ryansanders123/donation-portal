@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const year = parseInt(url.searchParams.get("year") ?? String(new Date().getFullYear()), 10);
   if (!doneeId) return new Response("missing donee", { status: 400 });
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: donee } = await supabase.from("donees").select("name").eq("id", doneeId).single();
   const { data } = await supabase.from("donations")
     .select("date_received,type,amount,funds(name)")

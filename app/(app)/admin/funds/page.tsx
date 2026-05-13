@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { addFund, archiveFund } from "@/app/(app)/admin/actions";
 
 export default async function FundsPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: funds } = await supabase
     .from("funds")
     .select("*")

@@ -39,7 +39,7 @@ export function canonicalPair(x: string, y: string): { a: string; b: string } {
 async function hydrateDonees(ids: string[]): Promise<Map<string, DoneeDetail>> {
   const out = new Map<string, DoneeDetail>();
   if (ids.length === 0) return out;
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const [details, stats] = await Promise.all([
     supabase
@@ -89,7 +89,7 @@ export async function getDupCandidates(opts?: {
   limit?: number;
   minScore?: number;
 }): Promise<DupCandidatePair[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const limit = opts?.limit ?? 50;
   const minScore = opts?.minScore ?? 0.4;
 

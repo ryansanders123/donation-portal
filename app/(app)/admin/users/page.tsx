@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { inviteUser, setUserRole, removeUser } from "@/app/(app)/admin/actions";
 
 export default async function UsersPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: users } = await supabase
     .from("users")
     .select("id,email,role,last_login_at,removed_at,auth_user_id,platform_admin")

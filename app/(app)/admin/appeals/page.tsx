@@ -12,7 +12,7 @@ type AppealRow = {
 };
 
 export default async function AppealsPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: appeals } = await supabase
     .from("appeals")
     .select("*")

@@ -123,7 +123,7 @@ export async function addFund(input: unknown) {
   await requireAdmin();
   await assertFeature("funds");
   const { name } = fundInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("funds").insert({ name });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/funds");
@@ -132,7 +132,7 @@ export async function addFund(input: unknown) {
 export async function archiveFund(id: string) {
   await requireAdmin();
   await assertFeature("funds");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("funds").update({ archived_at: new Date().toISOString() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/funds");
@@ -141,7 +141,7 @@ export async function archiveFund(id: string) {
 export async function restoreFund(id: string) {
   await requireAdmin();
   await assertFeature("funds");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("funds").update({ archived_at: null }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/funds");
@@ -153,7 +153,7 @@ export async function addCampaign(input: unknown) {
   const admin = await requireAdmin();
   await assertFeature("campaigns");
   const parsed = campaignInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("campaigns").insert({
     name: parsed.name,
     goal_amount: parsed.goal_amount && parsed.goal_amount !== "" ? parsed.goal_amount : null,
@@ -168,7 +168,7 @@ export async function addCampaign(input: unknown) {
 export async function archiveCampaign(id: string) {
   await requireAdmin();
   await assertFeature("campaigns");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("campaigns").update({ archived_at: new Date().toISOString() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/campaigns");
@@ -177,7 +177,7 @@ export async function archiveCampaign(id: string) {
 export async function restoreCampaign(id: string) {
   await requireAdmin();
   await assertFeature("campaigns");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("campaigns").update({ archived_at: null }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/campaigns");
@@ -189,7 +189,7 @@ export async function addAppeal(input: unknown) {
   const admin = await requireAdmin();
   await assertFeature("appeals");
   const parsed = appealInputSchema.parse(input);
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("appeals").insert({ name: parsed.name, created_by: admin.id });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/appeals");
@@ -198,7 +198,7 @@ export async function addAppeal(input: unknown) {
 export async function archiveAppeal(id: string) {
   await requireAdmin();
   await assertFeature("appeals");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("appeals").update({ archived_at: new Date().toISOString() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/appeals");
@@ -207,7 +207,7 @@ export async function archiveAppeal(id: string) {
 export async function restoreAppeal(id: string) {
   await requireAdmin();
   await assertFeature("appeals");
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("appeals").update({ archived_at: null }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/appeals");

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year + 1}-01-01`;
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   // Page through donations matching the filters.
   type Row = {

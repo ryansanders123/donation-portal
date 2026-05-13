@@ -41,7 +41,7 @@ export default async function VoidPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: d } = await supabase
     .from("donations")
     .select("id,amount,date_received,type,donees(name),funds(name),voided_at")
